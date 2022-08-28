@@ -23,17 +23,29 @@ struct ServerProfile {
     wan_interface: String,
 }
 
-fn read_server_config() -> Option<ServerProfile> {
-    let contents = std::fs::read_to_string("/etc/wireguard/server.json");
+fn generate_wg_keys() -> (String, String) {
+    let private_key = std::process::Command::new("wg")
+        .arg("genkey")
+        .output()
+        .unwrap();
+    let private_key = String::from_utf8(private_key.stdout).unwrap();
+    let mut public_key = Command::new("wg")
+        .arg("pubkey")
+        .stderr(Stdio::null())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    public_key
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(private_key.as_bytes())
+        .unwrap();
 
-    match contents {
-        Ok(content) => {
-            return serde_json::from_str(&content).unwrap();
-        }
-        Err(_) => {
-            return None;
-        }
-    }
+    // let output = public_key.wait_with_output().unwrap();
+    let public_key = String::from_utf8(public_key.wait_with_output().unwrap().stdout).unwrap();
+    return (private_key, public_key);
 }
 
 impl ServerProfile {
@@ -43,29 +55,7 @@ impl ServerProfile {
         wan_interface: String,
         port: Option<i32>,
     ) -> ServerProfile {
-        let private_key = std::process::Command::new("wg")
-            .arg("genkey")
-            .output()
-            .unwrap();
-        let private_key = String::from_utf8(private_key.stdout).unwrap();
-        let mut public_key = Command::new("wg")
-            .arg("pubkey")
-            .stderr(Stdio::null())
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .unwrap();
-        public_key
-            .stdin
-            .take()
-            .unwrap()
-            .write_all(private_key.as_bytes())
-            .unwrap();
-
-        // let output = public_key.wait_with_output().unwrap();
-        let public_key = String::from_utf8(public_key.wait_with_output().unwrap().stdout).unwrap();
-        println!("private: {}", private_key);
-        println!("public: {}", public_key);
+        let (private_key, public_key) = generate_wg_keys();
         return {
             ServerProfile {
                 public_key,
@@ -85,6 +75,26 @@ impl ServerProfile {
         if file_write_result.is_err() {
             println!("Failed to write server config. Will exit");
             println!("{}", file_write_result.err().unwrap());
+        }
+    }
+
+    fn rotate(&mut self) {
+        let new_keys = generate_wg_keys();
+        self.private_key = new_keys.0;
+        self.public_key = new_keys.1;
+        self.persist();
+    }
+
+    fn read_from_config() -> Option<ServerProfile> {
+        let contents = std::fs::read_to_string(WIREGUARD_PATH.to_owned() + "/server.json");
+
+        match contents {
+            Ok(content) => {
+                return serde_json::from_str(&content).unwrap();
+            }
+            Err(_) => {
+                return None;
+            }
         }
     }
 }
@@ -126,14 +136,14 @@ fn main() {
     //     std::process::exit(1);
     // }
 
-    let c = ServerProfile::generate(
-        "100.100.100.100".to_owned(),
-        "100.100.100.100".to_owned(),
-        "ens5".to_owned(),
-        None,
-    );
+    // let c = ServerProfile::generate(
+    //     "100.100.100.100".to_owned(),
+    //     "100.100.100.100".to_owned(),
+    //     "ens5".to_owned(),
+    //     None,
+    // );
 
-    c.persist();
+    // c.persist();
 
     // if command == "add" {
     //     let profile_name = ask("What is is the name of the user?");
