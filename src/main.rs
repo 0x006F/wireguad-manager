@@ -51,6 +51,6 @@ fn main() {
 
     if config.is_some() {
         let config = config.unwrap();
-        println!("{} {} {}", config.public_ip, config.private_ip, config.port);
+        config.list_clients();
     }
 }
