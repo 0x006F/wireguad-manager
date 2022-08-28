@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::fs;
-use std::io::{self, BufRead, Read, Write};
-use std::process::{Command, Stdio};
+use std::process::Command;
 
-const WIREGUARD_PATH: &str = "/home/giri/wireguard_mg";
+mod models;
+mod utils;
+use models::ServerProfile;
+use utils::ask;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct UserProfile {
@@ -12,100 +12,6 @@ struct UserProfile {
     private_key: String,
     address: String,
     dns: String,
-}
-#[derive(Serialize, Deserialize, Debug)]
-struct ServerProfile {
-    public_key: String,
-    private_key: String,
-    public_ip: String,
-    private_ip: String,
-    port: i32,
-    wan_interface: String,
-}
-
-fn generate_wg_keys() -> (String, String) {
-    let private_key = std::process::Command::new("wg")
-        .arg("genkey")
-        .output()
-        .unwrap();
-    let private_key = String::from_utf8(private_key.stdout).unwrap();
-    let mut public_key = Command::new("wg")
-        .arg("pubkey")
-        .stderr(Stdio::null())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
-    public_key
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(private_key.as_bytes())
-        .unwrap();
-
-    // let output = public_key.wait_with_output().unwrap();
-    let public_key = String::from_utf8(public_key.wait_with_output().unwrap().stdout).unwrap();
-    return (private_key, public_key);
-}
-
-impl ServerProfile {
-    fn generate(
-        public_ip: String,
-        private_ip: String,
-        wan_interface: String,
-        port: Option<i32>,
-    ) -> ServerProfile {
-        let (private_key, public_key) = generate_wg_keys();
-        return {
-            ServerProfile {
-                public_key,
-                private_key,
-                public_ip,
-                private_ip,
-                port: port.unwrap_or(6412),
-                wan_interface,
-            }
-        };
-    }
-
-    fn persist(&self) {
-        let json_string = serde_json::to_string_pretty(&self).unwrap();
-        let file_write_result = fs::write(WIREGUARD_PATH.to_owned() + "/server.json", json_string);
-
-        if file_write_result.is_err() {
-            println!("Failed to write server config. Will exit");
-            println!("{}", file_write_result.err().unwrap());
-        }
-    }
-
-    fn rotate(&mut self) {
-        let new_keys = generate_wg_keys();
-        self.private_key = new_keys.0;
-        self.public_key = new_keys.1;
-        self.persist();
-    }
-
-    fn read_from_config() -> Option<ServerProfile> {
-        let contents = std::fs::read_to_string(WIREGUARD_PATH.to_owned() + "/server.json");
-
-        match contents {
-            Ok(content) => {
-                return serde_json::from_str(&content).unwrap();
-            }
-            Err(_) => {
-                return None;
-            }
-        }
-    }
-}
-
-fn ask(question: &str) -> String {
-    print!("{}: ", question);
-    io::stdout().flush().unwrap();
-    let mut answer_string = String::new();
-    let stdin = io::stdin();
-    stdin.lock().read_line(&mut answer_string).unwrap();
-    return answer_string.trim().to_string();
 }
 
 fn main() {
@@ -148,4 +54,11 @@ fn main() {
     // if command == "add" {
     //     let profile_name = ask("What is is the name of the user?");
     // }
+
+    let config = ServerProfile::read_from_config();
+
+    if config.is_some() {
+        let config = config.unwrap();
+        println!("{} {} {}", config.public_ip, config.private_ip, config.port);
+    }
 }
