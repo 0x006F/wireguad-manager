@@ -12,6 +12,7 @@ pub struct ServerProfile {
     pub private_ip: String,
     pub port: i32,
     pub wan_interface: String,
+    pub dns: Option<String>,
 }
 
 impl ServerProfile {
@@ -30,6 +31,7 @@ impl ServerProfile {
                 private_ip,
                 port: port.unwrap_or(6412),
                 wan_interface,
+                dns: None,
             }
         };
     }

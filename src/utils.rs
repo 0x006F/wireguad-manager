@@ -1,5 +1,5 @@
 use std::{
-    io::{Write, self, BufRead},
+    io::{self, BufRead, Write},
     process::{Command, Stdio},
 };
 
@@ -35,4 +35,13 @@ pub fn ask(question: &str) -> String {
     let stdin = io::stdin();
     stdin.lock().read_line(&mut answer_string).unwrap();
     return answer_string.trim().to_string();
+}
+
+pub fn generate_psk() -> String {
+    let psk = std::process::Command::new("wg")
+        .arg("genpsk")
+        .output()
+        .unwrap();
+    let psk = String::from_utf8(psk.stdout).unwrap();
+    return psk;
 }

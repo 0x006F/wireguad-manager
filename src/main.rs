@@ -1,18 +1,10 @@
-use serde::{Deserialize, Serialize};
 use std::process::Command;
 
 mod models;
 mod utils;
+
 use models::ServerProfile;
 use utils::ask;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct UserProfile {
-    public_key: String,
-    private_key: String,
-    address: String,
-    dns: String,
-}
 
 fn main() {
     println!("Welcome to Wireguard Management App");
