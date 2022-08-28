@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::fs;
 use std::io::{self, BufRead, Read, Write};
 use std::process::{Command, Stdio};
+
+const WIREGUARD_PATH: &str = "/home/giri/wireguard_mg";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct UserProfile {
@@ -74,6 +77,16 @@ impl ServerProfile {
             }
         };
     }
+
+    fn persist(&self) {
+        let json_string = serde_json::to_string_pretty(&self).unwrap();
+        let file_write_result = fs::write(WIREGUARD_PATH.to_owned() + "/server.json", json_string);
+
+        if file_write_result.is_err() {
+            println!("Failed to write server config. Will exit");
+            println!("{}", file_write_result.err().unwrap());
+        }
+    }
 }
 
 fn ask(question: &str) -> String {
@@ -119,6 +132,8 @@ fn main() {
         "ens5".to_owned(),
         None,
     );
+
+    c.persist();
 
     // if command == "add" {
     //     let profile_name = ask("What is is the name of the user?");
