@@ -1,4 +1,4 @@
-use std::fs::write;
+use std::fs::{read_to_string, write};
 
 use serde::{Deserialize, Serialize};
 
@@ -10,19 +10,31 @@ pub struct ClientProfile {
     pub public_key: String,
     pub psk: String,
     private_key: String,
-    pub address: String,
+    pub address: Option<String>,
     pub dns: Option<String>,
-    pub endpoint: String,
-    preshared_key: String,
-    config_path: Option<String>,
+    pub endpoint: Option<String>,
 }
 
 impl ClientProfile {
+    pub fn new(name: String) -> Self {
+        let new_keys = generate_wg_keys();
+        let new_psk = generate_psk();
+        let client_config = ClientProfile {
+            name,
+            psk: new_psk,
+            private_key: new_keys.0,
+            public_key: new_keys.1,
+            dns: None,
+            address: None,
+            endpoint: None,
+        };
+        return client_config;
+    }
     fn rotate_credentials(&mut self) {
         let new_psk = generate_psk();
         let new_keys = generate_wg_keys();
 
-        self.preshared_key = new_psk;
+        self.psk = new_psk;
         self.private_key = new_keys.0;
         self.public_key = new_keys.1;
 
@@ -31,31 +43,55 @@ impl ClientProfile {
     }
 
     fn persist(&self) {
-        if self.config_path.is_none() {
-            println!("WARNING: Could not save config details for {}", &self.name);
-        }
-
-        let config_path = self.config_path.as_ref().unwrap().clone();
+        let wireguard_install_path = "/home/giri/wireguard_mg";
 
         // Save PSK
-        let mut psk_file_name = config_path.clone();
-        psk_file_name.push_str(&self.name);
-        psk_file_name.push_str("_psk");
+        let psk_path = format!(
+            "{}/clients/{}/{}_psk",
+            wireguard_install_path, &self.name, &self.name
+        );
 
-        write(&psk_file_name, &self.preshared_key).unwrap();
+        write(&psk_path, &self.psk).unwrap();
 
         // Save Public Key
-        let mut public_key_path = config_path.clone();
-        public_key_path.push_str(&self.name);
-        public_key_path.push_str("_pub");
+        let pub_key_path = format!(
+            "{}/clients/{}/{}_pub",
+            wireguard_install_path, &self.name, &self.name
+        );
 
-        write(&public_key_path, &self.preshared_key).unwrap();
+        write(&pub_key_path, &self.public_key).unwrap();
 
         // Save Private Key
-        let mut private_key_path = config_path.clone();
-        private_key_path.push_str(&self.name);
-        private_key_path.push_str("_key");
+        let private_key_path = format!(
+            "{}/clients/{}/{}_key",
+            wireguard_install_path, &self.name, &self.name
+        );
 
-        write(&private_key_path, &self.preshared_key).unwrap();
+        write(&private_key_path, &self.private_key).unwrap();
+    }
+
+    pub fn load(&mut self) {
+        let wireguard_install_path = "/home/giri/wireguard_mg";
+        let psk_path = format!(
+            "{}/clients/{}/{}_psk",
+            wireguard_install_path, &self.name, &self.name
+        );
+
+        let private_key_path = format!(
+            "{}/clients/{}/{}_key",
+            wireguard_install_path, &self.name, &self.name
+        );
+
+        let pub_key_path = format!(
+            "{}/clients/{}/{}_pub",
+            wireguard_install_path, &self.name, &self.name
+        );
+
+        let psk = read_to_string(psk_path).unwrap();
+        let private_key = read_to_string(private_key_path).unwrap();
+        let public_key = read_to_string(pub_key_path).unwrap();
+        self.psk = psk;
+        self.private_key = private_key;
+        self.public_key = public_key;
     }
 }

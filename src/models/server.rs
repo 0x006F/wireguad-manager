@@ -139,7 +139,9 @@ impl ServerProfile {
                         client_line.push_str("[Peer]\n");
                         client_line.push_str(format!("PublicKey = {}\n", x.public_key).as_str());
                         client_line.push_str(format!("PresharedKey = {}\n", x.psk).as_str());
-                        client_line.push_str(format!("AllowedIPs = {}\n", x.address).as_str());
+                        client_line.push_str(
+                            format!("AllowedIPs = {}\n", x.address.as_ref().unwrap()).as_str(),
+                        );
                         return client_line;
                     })
                     .collect::<Vec<String>>()
