@@ -1,33 +1,13 @@
-use std::process::{exit, Command};
-
-mod models;
-mod utils;
+use std::env;
 
 use models::ServerProfile;
-use utils::ask;
-
-use crate::models::ClientProfile;
-
-fn install_wireguard() {
-    let cmd_output = Command::new("apt")
-        .arg("install")
-        .arg("wireguard")
-        .output()
-        .unwrap();
-    if !&cmd_output.status.success() {
-        print!("There was something went wrong with install.");
-        println!("{}", String::from_utf8_lossy(&cmd_output.stderr));
-    } else {
-        println!("Wireguard installed successfully");
-    }
-}
+use wireguard_manager::{initialize, install_wireguard, models, utils::ask};
 
 fn main() {
     println!("Welcome to Wireguard Management App");
 
     'main: loop {
-        let mut server_config =
-            ServerProfile::read_from_config("/home/giri/wireguard_mg".to_owned());
+        let mut server_config = initialize(None);
         let command = ask("select an option");
         match command.as_str() {
             "install" => {
