@@ -11,7 +11,6 @@ const WIREGUARD_PATH: &str = "/home/giri/wireguard_mg";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerProfile {
-    pub address: String,
     pub public_key: String,
     private_key: String,
     pub public_ip: String,
@@ -23,31 +22,34 @@ pub struct ServerProfile {
 }
 
 impl ServerProfile {
-    fn generate(
+    pub fn new(
         public_ip: String,
         private_ip: String,
         wan_interface: String,
         port: Option<i32>,
+        default_dns: Option<String>,
+        clients: Option<Vec<ClientProfile>>,
     ) -> ServerProfile {
         let (private_key, public_key) = generate_wg_keys();
-        return {
-            ServerProfile {
-                address: String::from(""),
-                public_key,
-                private_key,
-                public_ip,
-                private_ip,
-                port: port.unwrap_or(6412),
-                wan_interface,
-                dns: None,
-                clients: None,
-            }
+        let config = ServerProfile {
+            public_key,
+            private_key,
+            public_ip,
+            private_ip,
+            port: port.unwrap_or(51820),
+            wan_interface,
+            dns: default_dns,
+            clients,
         };
+        config.persist(None);
+        return config;
     }
 
-    fn persist(&self) {
+    fn persist(&self, wireguard_path: Option<String>) {
+        let wireguard_install_path = wireguard_path.unwrap_or("/home/giri/wireguard_mg".to_owned());
         let json_string = serde_json::to_string_pretty(&self).unwrap();
-        let file_write_result = fs::write(WIREGUARD_PATH.to_owned() + "/conf.json", json_string);
+        let file_write_result =
+            fs::write(format!("{}/conf.json", wireguard_install_path), json_string);
 
         if file_write_result.is_err() {
             println!("Failed to write server config. Will exit");
@@ -59,7 +61,7 @@ impl ServerProfile {
         let new_keys = generate_wg_keys();
         self.private_key = new_keys.0;
         self.public_key = new_keys.1;
-        self.persist();
+        self.persist(None);
     }
 
     pub fn read_from_config(wireguard_path: String) -> Option<ServerProfile> {
@@ -144,7 +146,7 @@ impl ServerProfile {
                     .join("\n\n");
 
                 let mut interface_block = String::new();
-                interface_block.push_str(format!("Address = {}\n", profile.address).as_str());
+                interface_block.push_str(format!("Address = {}\n", profile.private_ip).as_str());
                 interface_block.push_str("SaveConfig = true\n");
                 interface_block
                     .push_str(format!("PrivateKey = {}\n", profile.private_key).as_str());
