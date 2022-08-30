@@ -15,7 +15,7 @@ pub struct ServerProfile {
     private_key: String,
     pub public_ip: String,
     pub private_ip: String,
-    pub port: i32,
+    pub port: u32,
     pub wan_interface: String,
     pub dns: Option<String>,
     pub clients: Option<Vec<ClientProfile>>,
@@ -26,7 +26,7 @@ impl ServerProfile {
         public_ip: String,
         private_ip: String,
         wan_interface: String,
-        port: Option<i32>,
+        port: Option<u32>,
         default_dns: Option<String>,
         clients: Option<Vec<ClientProfile>>,
     ) -> ServerProfile {
