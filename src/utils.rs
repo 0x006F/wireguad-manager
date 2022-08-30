@@ -8,7 +8,10 @@ pub fn generate_wg_keys() -> (String, String) {
         .arg("genkey")
         .output()
         .unwrap();
-    let private_key = String::from_utf8(private_key.stdout).unwrap();
+    let private_key = String::from_utf8(private_key.stdout)
+        .unwrap()
+        .trim()
+        .to_string();
     let mut public_key = Command::new("wg")
         .arg("pubkey")
         .stderr(Stdio::null())
@@ -23,8 +26,10 @@ pub fn generate_wg_keys() -> (String, String) {
         .write_all(private_key.as_bytes())
         .unwrap();
 
-    // let output = public_key.wait_with_output().unwrap();
-    let public_key = String::from_utf8(public_key.wait_with_output().unwrap().stdout).unwrap();
+    let public_key = String::from_utf8(public_key.wait_with_output().unwrap().stdout)
+        .unwrap()
+        .trim()
+        .to_string();
     return (private_key, public_key);
 }
 
@@ -42,6 +47,6 @@ pub fn generate_psk() -> String {
         .arg("genpsk")
         .output()
         .unwrap();
-    let psk = String::from_utf8(psk.stdout).unwrap();
+    let psk = String::from_utf8(psk.stdout).unwrap().trim().to_owned();
     return psk;
 }
