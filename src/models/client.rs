@@ -1,4 +1,4 @@
-use std::fs::{read_to_string, write};
+use std::fs::{create_dir_all, read_to_string, write};
 
 use serde::{Deserialize, Serialize};
 
@@ -42,8 +42,9 @@ impl ClientProfile {
         self.persist();
     }
 
-    fn persist(&self) {
+    pub fn persist(&self) {
         let wireguard_install_path = "/home/giri/wireguard_mg";
+        create_dir_all(format!("{}/clients/{}", &wireguard_install_path, self.name)).unwrap();
 
         // Save PSK
         let psk_path = format!(
