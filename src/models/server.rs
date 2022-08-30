@@ -2,7 +2,6 @@ use crate::utils::generate_wg_keys;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, read_to_string, File},
-    io::{BufRead, BufReader},
     process::exit,
 };
 
@@ -48,7 +47,7 @@ impl ServerProfile {
 
     fn persist(&self) {
         let json_string = serde_json::to_string_pretty(&self).unwrap();
-        let file_write_result = fs::write(WIREGUARD_PATH.to_owned() + "/server.json", json_string);
+        let file_write_result = fs::write(WIREGUARD_PATH.to_owned() + "/conf.json", json_string);
 
         if file_write_result.is_err() {
             println!("Failed to write server config. Will exit");
@@ -56,15 +55,16 @@ impl ServerProfile {
         }
     }
 
-    fn rotate(&mut self) {
+    pub fn rotate(&mut self) {
         let new_keys = generate_wg_keys();
         self.private_key = new_keys.0;
         self.public_key = new_keys.1;
         self.persist();
     }
 
-    pub fn read_from_config() -> Option<ServerProfile> {
-        let contents = std::fs::read_to_string(WIREGUARD_PATH.to_owned() + "/conf.json");
+    pub fn read_from_config(wireguard_path: String) -> Option<ServerProfile> {
+        let conf_json_path = format!("{}/conf.json", wireguard_path);
+        let contents = std::fs::read_to_string(conf_json_path);
 
         match contents {
             Ok(content) => {
