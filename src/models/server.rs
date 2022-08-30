@@ -1,7 +1,7 @@
 use crate::utils::generate_wg_keys;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{self, read_to_string, File},
+    fs::{self, read_to_string, remove_dir_all, File},
     process::exit,
 };
 
@@ -189,6 +189,44 @@ impl ServerProfile {
         }
         self.persist(None);
         self.rebuild_config();
+        client_config.persist();
         return client_config;
+    }
+
+    pub fn unregister_client(&mut self, client_name: String) {
+        let clients = &self.clients.clone();
+
+        match clients {
+            None => {
+                println!("No registered clients!");
+                exit(0);
+            }
+            Some(clients) => {
+                let client_to_delete = clients.iter().find(|x| x.name == client_name);
+
+                match client_to_delete {
+                    None => {
+                        println!("Client not found!: {}", client_name);
+                        exit(0);
+                    }
+                    Some(client) => {
+                        let client_artifacts_path =
+                            format!("/home/giri/wireguard_mg/clients/{}", client.name);
+                        remove_dir_all(client_artifacts_path).unwrap();
+                    }
+                }
+
+                let new_clients: Vec<ClientProfile> = clients
+                    .clone()
+                    .into_iter()
+                    .filter(|x| x.name != client_name)
+                    .map(|x| x.clone())
+                    .collect();
+                println!("{:?}", new_clients);
+                self.clients = Some(new_clients);
+                self.persist(None);
+                self.rebuild_config();
+            }
+        }
     }
 }
