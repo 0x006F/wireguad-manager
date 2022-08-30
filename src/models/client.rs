@@ -8,6 +8,7 @@ use crate::utils::{generate_psk, generate_wg_keys};
 pub struct ClientProfile {
     pub name: String,
     pub public_key: String,
+    pub psk: String,
     private_key: String,
     pub address: String,
     pub dns: Option<String>,

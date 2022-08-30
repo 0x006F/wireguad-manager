@@ -6,10 +6,13 @@ use std::{
     process::exit,
 };
 
+use super::ClientProfile;
+
 const WIREGUARD_PATH: &str = "/home/giri/wireguard_mg";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerProfile {
+    pub address: String,
     pub public_key: String,
     private_key: String,
     pub public_ip: String,
@@ -17,8 +20,7 @@ pub struct ServerProfile {
     pub port: i32,
     pub wan_interface: String,
     pub dns: Option<String>,
-    #[serde(skip_deserializing)]
-    pub clients: Vec<String>,
+    pub clients: Option<Vec<ClientProfile>>,
 }
 
 impl ServerProfile {
@@ -31,6 +33,7 @@ impl ServerProfile {
         let (private_key, public_key) = generate_wg_keys();
         return {
             ServerProfile {
+                address: String::from(""),
                 public_key,
                 private_key,
                 public_ip,
@@ -38,7 +41,7 @@ impl ServerProfile {
                 port: port.unwrap_or(6412),
                 wan_interface,
                 dns: None,
-                clients: vec!["".to_owned()],
+                clients: None,
             }
         };
     }
@@ -61,7 +64,7 @@ impl ServerProfile {
     }
 
     pub fn read_from_config() -> Option<ServerProfile> {
-        let contents = std::fs::read_to_string(WIREGUARD_PATH.to_owned() + "/server.json");
+        let contents = std::fs::read_to_string(WIREGUARD_PATH.to_owned() + "/conf.json");
 
         match contents {
             Ok(content) => {
@@ -80,8 +83,8 @@ impl ServerProfile {
         let mut config_file_path = String::new();
         config_file_path.push_str(&WIREGUARD_PATH);
         config_file_path.push_str("/");
-        config_file_path.push_str(&self.wan_interface);
-        config_file_path.push_str(".conf");
+        config_file_path.push_str("conf");
+        config_file_path.push_str(".json");
 
         let config_file = File::open(&config_file_path);
         match config_file {
@@ -90,26 +93,72 @@ impl ServerProfile {
                 exit(1)
             }
             Ok(file) => {
-                let config_file_reader = BufReader::new(file);
-                let mut client_list: Vec<String> = Vec::new();
+                // let config_file_reader = BufReader::new(file);
+                // let mut client_list: Vec<String> = Vec::new();
 
-                for line in config_file_reader.lines() {
-                    let line = line.as_ref().unwrap().trim();
-                    if line.starts_with("# client_id") {
-                        let parts = line
-                            .chars()
-                            .skip(client_identifier.len())
-                            .collect::<String>();
-                        client_list.push(parts.trim().to_owned());
-                    }
-                }
-                self.clients = client_list;
+                // for line in config_file_reader.lines() {
+                //     let line = line.as_ref().unwrap().trim();
+                //     if line.starts_with("# client_id") {
+                //         let parts = line
+                //             .chars()
+                //             .skip(client_identifier.len())
+                //             .collect::<String>();
+                //         client_list.push(parts.trim().to_owned());
+                //     }
+                // }
+                // self.clients = client_list;
             }
         }
     }
 
     pub fn list_clients(&self) {
-        let clients = &self.clients.join(",");
-        println!("Registered clients are: \n{}", clients);
+        println!("Registered clients are");
+    }
+
+    pub fn rebuild_config(&self) {
+        let config_path = WIREGUARD_PATH.to_owned() + "/conf.json";
+        let config_contents = read_to_string(config_path);
+
+        match config_contents {
+            Err(err) => {
+                println!("Could not load config JSON. {}", err.to_string());
+                exit(1)
+            }
+            Ok(content) => {
+                let mut profile: ServerProfile = serde_json::from_str(&content).unwrap();
+                profile.extract_clients();
+
+                let clients_block = &profile
+                    .clients
+                    .unwrap_or(vec![])
+                    .iter()
+                    .map(|x| {
+                        let mut client_line = String::new();
+                        client_line.push_str("[Peer]\n");
+                        client_line.push_str(format!("PublicKey = {}\n", x.public_key).as_str());
+                        client_line.push_str(format!("PresharedKey = {}\n", x.psk).as_str());
+                        client_line.push_str(format!("AllowedIPs = {}\n", x.address).as_str());
+                        return client_line;
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n\n");
+
+                let mut interface_block = String::new();
+                interface_block.push_str(format!("Address = {}\n", profile.address).as_str());
+                interface_block.push_str("SaveConfig = true\n");
+                interface_block
+                    .push_str(format!("PrivateKey = {}\n", profile.private_key).as_str());
+                interface_block.push_str(format!("ListenPort = {}\n", profile.port).as_str());
+                interface_block.push_str(format!("PostUp = iptables -A FORWARD -i {} -j ACCEPT; iptables -t nat -A POSTROUTING -o {} -j MASQUERADE\n",profile.wan_interface, profile.private_key).as_str());
+                interface_block.push_str(format!("PostDown = iptables -D FORWARD -i {} -j ACCEPT; iptables -t nat -D POSTROUTING -o {} -j MASQUERADE\n",profile.wan_interface, profile.private_key).as_str());
+
+                let final_string = format!("[Interface]\n{}\n\n{}", interface_block, clients_block);
+                std::fs::write(
+                    format!("{}/{}.conf", &WIREGUARD_PATH, profile.wan_interface),
+                    final_string,
+                )
+                .unwrap();
+            }
+        }
     }
 }
