@@ -160,7 +160,6 @@ impl ServerProfile {
         match clients {
             None => {
                 println!("No registered clients!");
-                exit(0);
             }
             Some(clients) => {
                 let client_to_delete = clients.iter().find(|x| x.name == client_name);
@@ -168,7 +167,6 @@ impl ServerProfile {
                 match client_to_delete {
                     None => {
                         println!("Client not found!: {}", client_name);
-                        exit(0);
                     }
                     Some(client) => {
                         let client_artifacts_path =
