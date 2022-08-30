@@ -4,19 +4,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::{generate_psk, generate_wg_keys};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClientProfile {
     pub name: String,
     pub public_key: String,
     pub psk: String,
     private_key: String,
-    pub address: Option<String>,
+    pub address: String,
     pub dns: Option<String>,
-    pub endpoint: Option<String>,
+    pub endpoint: String,
 }
 
 impl ClientProfile {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, server_endpoint: String, ip: String) -> Self {
         let new_keys = generate_wg_keys();
         let new_psk = generate_psk();
         let client_config = ClientProfile {
@@ -25,8 +25,8 @@ impl ClientProfile {
             private_key: new_keys.0,
             public_key: new_keys.1,
             dns: None,
-            address: None,
-            endpoint: None,
+            address: ip,
+            endpoint: server_endpoint,
         };
         return client_config;
     }

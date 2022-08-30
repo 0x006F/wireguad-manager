@@ -136,16 +136,15 @@ impl ServerProfile {
                     .iter()
                     .map(|x| {
                         let mut client_line = String::new();
+                        client_line.push_str(format!("# client_id: {}\n", x.name.trim()).as_str());
                         client_line.push_str("[Peer]\n");
-                        client_line.push_str(format!("PublicKey = {}\n", x.public_key).as_str());
-                        client_line.push_str(format!("PresharedKey = {}\n", x.psk).as_str());
-                        client_line.push_str(
-                            format!("AllowedIPs = {}\n", x.address.as_ref().unwrap()).as_str(),
-                        );
+                        client_line.push_str(format!("PublicKey = {}\n", x.public_key.trim()).as_str());
+                        client_line.push_str(format!("PresharedKey = {}\n", x.psk.trim()).as_str());
+                        client_line.push_str(format!("AllowedIPs = {}\n", x.address.trim()).as_str());
                         return client_line;
                     })
                     .collect::<Vec<String>>()
-                    .join("\n\n");
+                    .join("\n");
 
                 let mut interface_block = String::new();
                 interface_block.push_str(format!("Address = {}\n", profile.private_ip).as_str());
@@ -155,6 +154,7 @@ impl ServerProfile {
                 interface_block.push_str(format!("ListenPort = {}\n", profile.port).as_str());
                 interface_block.push_str(format!("PostUp = iptables -A FORWARD -i {} -j ACCEPT; iptables -t nat -A POSTROUTING -o {} -j MASQUERADE\n",profile.wan_interface, profile.private_key).as_str());
                 interface_block.push_str(format!("PostDown = iptables -D FORWARD -i {} -j ACCEPT; iptables -t nat -D POSTROUTING -o {} -j MASQUERADE\n",profile.wan_interface, profile.private_key).as_str());
+                println!("{}", &clients_block);
 
                 let final_string = format!("[Interface]\n{}\n\n{}", interface_block, clients_block);
                 std::fs::write(
@@ -164,5 +164,28 @@ impl ServerProfile {
                 .unwrap();
             }
         }
+    }
+
+    pub fn register_client(&mut self, client_name: String) {
+        let client_config = ClientProfile::new(
+            client_name,
+            format!("{}:{}", &self.public_ip, &self.port),
+            "ip".to_owned(),
+        );
+
+        let clients = &self.clients.clone();
+        match clients {
+            None => {
+                let new_client_vec = vec![client_config];
+                self.clients = Some(new_client_vec);
+            }
+            Some(clients) => {
+                let mut clients = clients.clone();
+                clients.push(client_config);
+                self.clients = Some(clients.to_vec());
+            }
+        }
+        self.persist(None);
+        self.rebuild_config();
     }
 }
