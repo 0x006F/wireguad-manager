@@ -70,18 +70,13 @@ impl ServerProfile {
 
         match contents {
             Ok(content) => {
-                let mut profile: ServerProfile = serde_json::from_str(&content).unwrap();
-                profile.extract_clients();
+                let profile: ServerProfile = serde_json::from_str(&content).unwrap();
                 return Some(profile);
             }
             Err(_) => {
                 return None;
             }
         }
-    }
-
-    pub fn list_clients(&self) {
-        println!("Registered clients are");
     }
 
     pub fn rebuild_config(&self) {
