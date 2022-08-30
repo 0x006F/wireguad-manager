@@ -80,39 +80,6 @@ impl ServerProfile {
         }
     }
 
-    fn extract_clients(&mut self) {
-        let client_identifier = "# client_id:";
-        let mut config_file_path = String::new();
-        config_file_path.push_str(&WIREGUARD_PATH);
-        config_file_path.push_str("/");
-        config_file_path.push_str("conf");
-        config_file_path.push_str(".json");
-
-        let config_file = File::open(&config_file_path);
-        match config_file {
-            Err(_) => {
-                println!("Could not read config file.");
-                exit(1)
-            }
-            Ok(file) => {
-                // let config_file_reader = BufReader::new(file);
-                // let mut client_list: Vec<String> = Vec::new();
-
-                // for line in config_file_reader.lines() {
-                //     let line = line.as_ref().unwrap().trim();
-                //     if line.starts_with("# client_id") {
-                //         let parts = line
-                //             .chars()
-                //             .skip(client_identifier.len())
-                //             .collect::<String>();
-                //         client_list.push(parts.trim().to_owned());
-                //     }
-                // }
-                // self.clients = client_list;
-            }
-        }
-    }
-
     pub fn list_clients(&self) {
         println!("Registered clients are");
     }
@@ -127,8 +94,7 @@ impl ServerProfile {
                 exit(1)
             }
             Ok(content) => {
-                let mut profile: ServerProfile = serde_json::from_str(&content).unwrap();
-                profile.extract_clients();
+                let profile: ServerProfile = serde_json::from_str(&content).unwrap();
 
                 let clients_block = &profile
                     .clients
