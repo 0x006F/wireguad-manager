@@ -54,10 +54,13 @@ impl ClientProfile {
 
     fn save_config(&self) {
         let wireguard_install_path = "/home/giri/wireguard_mg";
-        create_dir_all(format!("{}/clients/", &wireguard_install_path)).unwrap();
+        create_dir_all(format!("{}/clients/{}", &wireguard_install_path, self.name)).unwrap();
 
-        let config_file_path = format!("{}/clients/{}.json", &wireguard_install_path, self.name);
-        println!("{:?}",self);
+        let config_file_path = format!(
+            "{}/clients/{}/{}.json",
+            &wireguard_install_path, self.name, self.name
+        );
+        println!("{:?}", self);
         write(
             config_file_path,
             serde_json::to_string_pretty(self).unwrap(),
@@ -132,8 +135,8 @@ impl ClientProfile {
         let wireguard_install_path = "/home/giri/wireguard_mg";
 
         let conf_path = path.unwrap_or(format!(
-            "{}/clients/{}.conf",
-            wireguard_install_path, self.name
+            "{}/clients/{}/{}.conf",
+            wireguard_install_path, self.name, self.name
         ));
 
         let mut interface_block = format!(
