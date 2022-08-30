@@ -138,9 +138,11 @@ impl ServerProfile {
                         let mut client_line = String::new();
                         client_line.push_str(format!("# client_id: {}\n", x.name.trim()).as_str());
                         client_line.push_str("[Peer]\n");
-                        client_line.push_str(format!("PublicKey = {}\n", x.public_key.trim()).as_str());
+                        client_line
+                            .push_str(format!("PublicKey = {}\n", x.public_key.trim()).as_str());
                         client_line.push_str(format!("PresharedKey = {}\n", x.psk.trim()).as_str());
-                        client_line.push_str(format!("AllowedIPs = {}\n", x.address.trim()).as_str());
+                        client_line
+                            .push_str(format!("AllowedIPs = {}\n", x.address.trim()).as_str());
                         return client_line;
                     })
                     .collect::<Vec<String>>()
@@ -166,7 +168,7 @@ impl ServerProfile {
         }
     }
 
-    pub fn register_client(&mut self, client_name: String) {
+    pub fn register_client(&mut self, client_name: String) -> ClientProfile {
         let client_config = ClientProfile::new(
             client_name,
             format!("{}:{}", &self.public_ip, &self.port),
@@ -176,16 +178,17 @@ impl ServerProfile {
         let clients = &self.clients.clone();
         match clients {
             None => {
-                let new_client_vec = vec![client_config];
-                self.clients = Some(new_client_vec);
+                let new_client_vec = vec![client_config.clone()];
+                self.clients = Some(new_client_vec.clone());
             }
             Some(clients) => {
                 let mut clients = clients.clone();
-                clients.push(client_config);
+                clients.push(client_config.clone());
                 self.clients = Some(clients.to_vec());
             }
         }
         self.persist(None);
         self.rebuild_config();
+        return client_config;
     }
 }
