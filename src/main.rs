@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::process::{exit, Command};
 
 mod models;
 mod utils;
@@ -6,24 +6,91 @@ mod utils;
 use models::ServerProfile;
 use utils::ask;
 
+use crate::models::ClientProfile;
+
+fn install_wireguard() {
+    let cmd_output = Command::new("apt")
+        .arg("install")
+        .arg("wireguard")
+        .output()
+        .unwrap();
+    if !&cmd_output.status.success() {
+        print!("There was something went wrong with install.");
+        println!("{}", String::from_utf8_lossy(&cmd_output.stderr));
+    } else {
+        println!("Wireguard installed successfully");
+    }
+}
+
 fn main() {
     println!("Welcome to Wireguard Management App");
-    let command = ask("select an option");
-    if command == "install" {
-        let cmd_output = Command::new("apt")
-            .arg("install")
-            .arg("wireguard")
-            .output()
-            .unwrap();
-        if !&cmd_output.status.success() {
-            print!("There was something went wrong with install.");
-            println!("{}", String::from_utf8_lossy(&cmd_output.stderr));
-            return;
-        } else {
-            println!("Wireguard installed successfully");
-            return;
+    let mut server_config = ServerProfile::read_from_config("/home/giri/wireguard_mg".to_owned());
+
+    'main: loop {
+        let command = ask("select an option");
+        match command.as_str() {
+            "install" => {
+                install_wireguard();
+            }
+            "add_client" => {
+                if server_config.is_none() {
+                    println!("Looks like there's no active server configuration. Run \"init\" to create new config");
+                }
+            }
+            "init" => {
+                if server_config.is_some() {
+                    loop {
+                        let should_continue = ask("There's already some server config defined. Running init will overwrite everything. Continue? (y/n)");
+                        println!("{}", should_continue);
+
+                        if should_continue == "n" {
+                            println!("inside");
+                            continue 'main;
+                        }
+                        break;
+                    }
+                }
+                println!("We will walk you through the creation of new Wireguard Server config");
+                let public_ip = ask("What's the public IP of this server?");
+                let private_ip = ask("What should be the private IP CIDR for this VPN subnet?");
+                let wan_interface = ask("What's the network interface name which the connects this machine to the internet?");
+                let port = ask("What should be the Wireguard Server port?");
+                let default_dns = ask("Do you want to set up a custom DNS for this VPN clients? If yes, enter the DNS address");
+                let port = if port.is_empty() {
+                    None
+                } else {
+                    let port = port.parse::<u32>();
+                    match port {
+                        Err(_) => None,
+                        Ok(port) => Some(port),
+                    }
+                };
+                let dns = if default_dns.is_empty() {
+                    None
+                } else {
+                    Some(default_dns)
+                };
+                server_config = Some(ServerProfile::new(
+                    public_ip,
+                    private_ip,
+                    wan_interface,
+                    port,
+                    dns,
+                    None,
+                ));
+                server_config.as_ref().unwrap().rebuild_config();
+            }
+
+            "exit" => break,
+            _ => {
+                println!("unrecognixed");
+            }
         }
     }
+
+    // if command == "install" {
+    //     install_wireguard();
+    // }
 
     // let test: UserProfile = serde_json::from_value(json!({"name":"asd"})).unwrap();
     // println!("{:?}", test);
@@ -47,10 +114,27 @@ fn main() {
     //     let profile_name = ask("What is is the name of the user?");
     // }
 
-    let config = ServerProfile::read_from_config();
+    // let config = ServerProfile::read_from_config("/home/giri/wireguard_mg".to_owned());
 
-    if config.is_some() {
-        let config = config.unwrap();
-        config.list_clients();
-    }
+    // if config.is_some() {
+    //     let mut config = config.unwrap();
+
+    //     config.list_clients();
+    //     config.rebuild_config();
+    //     config.port = 9874;
+    //     config.rotate();
+    // }
+
+    // let mut config = ServerProfile::new(
+    //     "192.168.1.1".to_owned(),
+    //     "192.168.1.3".to_owned(),
+    //     "eth0".to_owned(),
+    //     None,
+    //     None,
+    //     None,
+    // );
+
+    // // let mut config = ServerProfile::read_from_config("/home/giri/wireguard_mg".to_owned()).unwrap();
+    // let giri = config.register_client("giri".to_owned());
+    // let ammu = config.register_client("ammu".to_owned());
 }
