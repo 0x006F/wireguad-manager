@@ -24,9 +24,10 @@ fn install_wireguard() {
 
 fn main() {
     println!("Welcome to Wireguard Management App");
-    let mut server_config = ServerProfile::read_from_config("/home/giri/wireguard_mg".to_owned());
 
     'main: loop {
+        let mut server_config =
+            ServerProfile::read_from_config("/home/giri/wireguard_mg".to_owned());
         let command = ask("select an option");
         match command.as_str() {
             "install" => {
@@ -35,6 +36,21 @@ fn main() {
             "add_client" => {
                 if server_config.is_none() {
                     println!("Looks like there's no active server configuration. Run \"init\" to create new config");
+                    continue;
+                } else {
+                    let mut server_config = server_config.unwrap();
+                    let client_name = ask("What's the client name?");
+                    server_config.register_client(client_name);
+                }
+            }
+            "remove_client" => {
+                if server_config.is_none() {
+                    println!("Looks like there's no active server configuration. Run \"init\" to create new config");
+                    continue;
+                } else {
+                    let mut server_config = server_config.unwrap();
+                    let client_name = ask("What's the client name?");
+                    server_config.unregister_client(client_name);
                 }
             }
             "init" => {
