@@ -164,7 +164,7 @@ impl ServerProfile {
         self.base_ip_seed = current_base_seed + 1;
         self.persist(None);
         self.rebuild_config();
-        client_config.persist();
+        client_config.persist(&self);
         return client_config;
     }
 

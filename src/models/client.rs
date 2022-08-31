@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::{generate_psk, generate_wg_keys};
 
+use super::ServerProfile;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClientProfile {
     pub name: String,
@@ -40,17 +42,17 @@ impl ClientProfile {
         };
         return client_config;
     }
-    fn rotate_credentials(&mut self) {
-        let new_psk = generate_psk();
-        let new_keys = generate_wg_keys();
+    // fn rotate_credentials(&mut self) {
+    //     let new_psk = generate_psk();
+    //     let new_keys = generate_wg_keys();
 
-        self.psk = new_psk;
-        self.private_key = new_keys.0;
-        self.public_key = new_keys.1;
+    //     self.psk = new_psk;
+    //     self.private_key = new_keys.0;
+    //     self.public_key = new_keys.1;
 
-        // Save Config
-        self.persist();
-    }
+    //     // Save Config
+    //     self.persist();
+    // }
 
     fn save_config(&self) {
         let wireguard_install_path = "/home/giri/wireguard_mg";
@@ -68,9 +70,9 @@ impl ClientProfile {
         .unwrap()
     }
 
-    pub fn persist(&self) {
+    pub fn persist(&self, server: &ServerProfile) {
         self.save_config();
-        self.generate_conf(None);
+        self.generate_conf(server, None);
     }
 
     pub fn load(client_name: String) -> Option<ClientProfile> {
@@ -131,7 +133,7 @@ impl ClientProfile {
         // };
     }
 
-    pub fn generate_conf(&self, path: Option<String>) {
+    pub fn generate_conf(&self, server: &ServerProfile, path: Option<String>) {
         let wireguard_install_path = "/home/giri/wireguard_mg";
 
         let conf_path = path.unwrap_or(format!(
@@ -148,7 +150,7 @@ impl ClientProfile {
             interface_block.push_str(format!("DNS = {}", &self.dns.as_ref().unwrap()).as_str());
         }
 
-        let peer_block = format!("[Peer]\nPublicKey = {}\nPresharedKey = {}\nAllowedIPs = {}\nEndpoint = {}\nPersistentKeepAlive = 25",self.server_public_key,self.psk,self.address,format!("{}:{}",self.server_endpoint,self.server_port));
+        let peer_block = format!("[Peer]\nPublicKey = {}\nPresharedKey = {}\nAllowedIPs = {}\nEndpoint = {}\nPersistentKeepAlive = 25",server.public_key,self.psk,self.address,format!("{}:{}",server.public_ip,server.port));
 
         write(conf_path, format!("{}\n\n{}", interface_block, peer_block)).unwrap();
     }
