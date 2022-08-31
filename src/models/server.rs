@@ -1,7 +1,7 @@
 use crate::utils::generate_wg_keys;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{self, read_to_string, remove_dir_all, File},
+    fs::{self, read_to_string, remove_dir_all},
     process::exit,
 };
 

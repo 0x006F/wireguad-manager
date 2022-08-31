@@ -1,8 +1,4 @@
-use std::{
-    fmt::format,
-    fs::{create_dir_all, metadata, read_to_string, write},
-    path::Path,
-};
+use std::fs::{create_dir_all, metadata, read_to_string, write};
 
 use serde::{Deserialize, Serialize};
 
