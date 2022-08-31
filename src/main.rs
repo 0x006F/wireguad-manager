@@ -32,10 +32,7 @@ fn main() {
                 if server_config.is_some() {
                     loop {
                         let should_continue = ask("There's already some server config defined. Running init will overwrite everything. Continue? (y/n)");
-                        println!("{}", should_continue);
-
                         if should_continue == "n" {
-                            println!("inside");
                             continue 'main;
                         }
                         break;
@@ -80,7 +77,7 @@ fn main() {
 
             "exit" => break,
             _ => {
-                println!("unrecognixed");
+                println!("Unrecognized input {}. Try again", command);
             }
         }
     }

@@ -124,7 +124,6 @@ impl ServerProfile {
                 interface_block.push_str(format!("ListenPort = {}\n", profile.port).as_str());
                 interface_block.push_str(format!("PostUp = iptables -A FORWARD -i {} -j ACCEPT; iptables -t nat -A POSTROUTING -o {} -j MASQUERADE\n",profile.interface_name, profile.wan_interface).as_str());
                 interface_block.push_str(format!("PostDown = iptables -D FORWARD -i {} -j ACCEPT; iptables -t nat -D POSTROUTING -o {} -j MASQUERADE\n",profile.interface_name, profile.wan_interface).as_str());
-                println!("{}", &clients_block);
 
                 let final_string = format!("[Interface]\n{}\n\n{}", interface_block, clients_block);
                 std::fs::write(
@@ -196,7 +195,6 @@ impl ServerProfile {
                     .filter(|x| x.name != client_name)
                     .map(|x| x.clone())
                     .collect();
-                println!("{:?}", new_clients);
                 self.clients = Some(new_clients);
                 self.persist();
                 self.rebuild_config();

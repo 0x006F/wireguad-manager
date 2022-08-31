@@ -53,7 +53,6 @@ impl ClientProfile {
     fn save_config(&self) {
         create_dir_all(format!("/etc/wireguard/clients/{}", self.name)).unwrap();
         let config_file_path = format!("/etc/wireguard/clients/{}/{}.json", self.name, self.name);
-        println!("{:?}", self);
         write(
             config_file_path,
             serde_json::to_string_pretty(self).unwrap(),
