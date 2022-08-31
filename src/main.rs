@@ -1,7 +1,5 @@
 use models::ServerProfile;
-use wireguard_manager::{
-    finalize_installation, install_wireguard, load_wireguard_config, models, utils::ask,
-};
+use wireguard_manager::{load_wireguard_config, models, utils::ask};
 
 fn main() {
     println!("Welcome to Wireguard Management App");
@@ -10,9 +8,6 @@ fn main() {
         let mut server_config = load_wireguard_config();
         let command = ask("select an option");
         match command.as_str() {
-            "install" => {
-                install_wireguard();
-            }
             "add_client" => {
                 if server_config.is_none() {
                     println!("Looks like there's no active server configuration. Run \"init\" to create new config");
@@ -79,7 +74,8 @@ fn main() {
                     vpn_cidr,
                 ));
                 server_config.as_ref().unwrap().rebuild_config();
-                finalize_installation(wg_interface);
+                println!("Successfully initialized server configuration.");
+                println!("Please run \"systemctl enable wg-quick@{}\" and \"systemctl restart wg-quick@{}\" take the changes into effect",wg_interface,wg_interface);
             }
 
             "exit" => break,
