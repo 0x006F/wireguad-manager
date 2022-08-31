@@ -136,10 +136,17 @@ impl ServerProfile {
     }
 
     pub fn register_client(&mut self, client_name: String) -> ClientProfile {
+        let server_private_ip = &self.private_ip;
+        let current_base_seed = &self.base_ip_seed;
+        let new_client_ip = current_base_seed + 1;
+        let mut client_ip = server_private_ip.split(".").take(3).collect::<Vec<&str>>();
+        let client_ip_string = &new_client_ip.to_string();
+        client_ip.push(client_ip_string);
+
         let client_config = ClientProfile::new(
             client_name,
             format!("{}:{}", &self.public_ip, &self.port),
-            "ip".to_owned(),
+            client_ip.join("."),
         );
 
         let clients = &self.clients.clone();
@@ -154,6 +161,7 @@ impl ServerProfile {
                 self.clients = Some(clients.to_vec());
             }
         }
+        self.base_ip_seed = current_base_seed + 1;
         self.persist(None);
         self.rebuild_config();
         client_config.persist();
