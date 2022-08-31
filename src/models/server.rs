@@ -7,7 +7,7 @@ use std::{
 
 use super::ClientProfile;
 
-const WIREGUARD_PATH: &str = "/home/giri/wireguard_mg";
+const WIREGUARD_PATH: &str = "/etc/wireguard";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ServerProfile {
@@ -50,15 +50,13 @@ impl ServerProfile {
             base_ip_seed: last_octet,
             vpn_cidr,
         };
-        config.persist(None);
+        config.persist();
         return config;
     }
 
-    fn persist(&self, wireguard_path: Option<String>) {
-        let wireguard_install_path = wireguard_path.unwrap_or("/home/giri/wireguard_mg".to_owned());
+    fn persist(&self) {
         let json_string = serde_json::to_string_pretty(&self).unwrap();
-        let file_write_result =
-            fs::write(format!("{}/conf.json", wireguard_install_path), json_string);
+        let file_write_result = fs::write(format!("/etc/wireguard/conf.json"), json_string);
 
         if file_write_result.is_err() {
             println!("Failed to write server config. Will exit");
@@ -70,7 +68,7 @@ impl ServerProfile {
         let new_keys = generate_wg_keys();
         self.private_key = new_keys.0;
         self.public_key = new_keys.1;
-        self.persist(None);
+        self.persist();
     }
 
     pub fn read_from_config(wireguard_path: String) -> Option<ServerProfile> {
@@ -165,7 +163,7 @@ impl ServerProfile {
             }
         }
         self.base_ip_seed = current_base_seed + 1;
-        self.persist(None);
+        self.persist();
         self.rebuild_config();
         client_config.persist(&self);
         return client_config;
@@ -187,7 +185,7 @@ impl ServerProfile {
                     }
                     Some(client) => {
                         let client_artifacts_path =
-                            format!("/home/giri/wireguard_mg/clients/{}", client.name);
+                            format!("/etc/wireguard/clients/{}", client.name);
                         remove_dir_all(client_artifacts_path).unwrap();
                     }
                 }
@@ -200,7 +198,7 @@ impl ServerProfile {
                     .collect();
                 println!("{:?}", new_clients);
                 self.clients = Some(new_clients);
-                self.persist(None);
+                self.persist();
                 self.rebuild_config();
             }
         }

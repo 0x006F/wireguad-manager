@@ -19,8 +19,8 @@ pub fn install_wireguard() {
     }
 }
 
-pub fn load_wireguard_config(install_path: Option<String>) -> Option<ServerProfile> {
-    ServerProfile::read_from_config(install_path.unwrap_or("/home/giri/wireguard_mg".to_owned()))
+pub fn load_wireguard_config() -> Option<ServerProfile> {
+    ServerProfile::read_from_config("/etc/wireguard".to_owned())
 }
 
 pub fn finalize_installation(interface_name: String) {

@@ -7,7 +7,7 @@ fn main() {
     println!("Welcome to Wireguard Management App");
 
     'main: loop {
-        let mut server_config = load_wireguard_config(None);
+        let mut server_config = load_wireguard_config();
         let command = ask("select an option");
         match command.as_str() {
             "install" => {
@@ -76,7 +76,7 @@ fn main() {
                     dns,
                     None,
                     &wg_interface,
-                    vpn_cidr
+                    vpn_cidr,
                 ));
                 server_config.as_ref().unwrap().rebuild_config();
                 finalize_installation(wg_interface);

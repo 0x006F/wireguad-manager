@@ -55,13 +55,8 @@ impl ClientProfile {
     // }
 
     fn save_config(&self) {
-        let wireguard_install_path = "/home/giri/wireguard_mg";
-        create_dir_all(format!("{}/clients/{}", &wireguard_install_path, self.name)).unwrap();
-
-        let config_file_path = format!(
-            "{}/clients/{}/{}.json",
-            &wireguard_install_path, self.name, self.name
-        );
+        create_dir_all(format!("/etc/wireguard/clients/{}", self.name)).unwrap();
+        let config_file_path = format!("/etc/wireguard/clients/{}/{}.json", self.name, self.name);
         println!("{:?}", self);
         write(
             config_file_path,
@@ -76,8 +71,7 @@ impl ClientProfile {
     }
 
     pub fn load(client_name: String) -> Option<ClientProfile> {
-        let wireguard_install_path = "/home/giri/wireguard_mg";
-        let client_config_path = format!("{}/clients/{}.json", wireguard_install_path, client_name);
+        let client_config_path = format!("/etc/wireguard/clients/{}.json", client_name);
 
         let is_exist = metadata(&client_config_path).is_ok();
         if !is_exist {
@@ -134,11 +128,9 @@ impl ClientProfile {
     }
 
     pub fn generate_conf(&self, server: &ServerProfile, path: Option<String>) {
-        let wireguard_install_path = "/home/giri/wireguard_mg";
-
         let conf_path = path.unwrap_or(format!(
-            "{}/clients/{}/{}.conf",
-            wireguard_install_path, self.name, self.name
+            "/etc/wireguard/clients/{}/{}.conf",
+            self.name, self.name
         ));
 
         let mut interface_block = format!(
