@@ -48,7 +48,8 @@ fn main() {
                 }
                 println!("We will walk you through the creation of new Wireguard Server config");
                 let public_ip = ask("What's the public IP of this server?");
-                let private_ip = ask("What should be the private IP CIDR for this VPN subnet?");
+                let private_ip = ask("What should be the private IP for this VPN subnet?");
+                let vpn_cidr = ask("What is the CIDR for this current private network?");
                 let wan_interface = ask("What's the network interface name which the connects this machine to the internet?");
                 let port = ask("What should be the Wireguard Server port?");
                 let default_dns = ask("Do you want to set up a custom DNS for this VPN clients? If yes, enter the DNS address");
@@ -75,6 +76,7 @@ fn main() {
                     dns,
                     None,
                     &wg_interface,
+                    vpn_cidr
                 ));
                 server_config.as_ref().unwrap().rebuild_config();
                 finalize_installation(wg_interface);

@@ -21,6 +21,7 @@ pub struct ServerProfile {
     pub clients: Option<Vec<ClientProfile>>,
     pub interface_name: String,
     base_ip_seed: u32,
+    pub vpn_cidr: String,
 }
 
 impl ServerProfile {
@@ -32,6 +33,7 @@ impl ServerProfile {
         default_dns: Option<String>,
         clients: Option<Vec<ClientProfile>>,
         wg_interface: &str,
+        vpn_cidr: String,
     ) -> ServerProfile {
         let (private_key, public_key) = generate_wg_keys();
         let last_octet: u32 = *&private_ip.split(".").last().unwrap().parse().unwrap();
@@ -46,6 +48,7 @@ impl ServerProfile {
             clients,
             interface_name: String::from(wg_interface),
             base_ip_seed: last_octet,
+            vpn_cidr,
         };
         config.persist(None);
         return config;

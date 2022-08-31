@@ -150,7 +150,7 @@ impl ClientProfile {
             interface_block.push_str(format!("DNS = {}", &self.dns.as_ref().unwrap()).as_str());
         }
 
-        let peer_block = format!("[Peer]\nPublicKey = {}\nPresharedKey = {}\nAllowedIPs = {}\nEndpoint = {}\nPersistentKeepAlive = 25",server.public_key,self.psk,self.address,format!("{}:{}",server.public_ip,server.port));
+        let peer_block = format!("[Peer]\nPublicKey = {}\nPresharedKey = {}\nAllowedIPs = {}\nEndpoint = {}\nPersistentKeepAlive = 25",server.public_key,self.psk,server.vpn_cidr,format!("{}:{}",server.public_ip,server.port));
 
         write(conf_path, format!("{}\n\n{}", interface_block, peer_block)).unwrap();
     }
