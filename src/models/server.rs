@@ -118,7 +118,7 @@ impl ServerProfile {
 
                 let mut interface_block = String::new();
                 interface_block.push_str(format!("Address = {}\n", profile.private_ip).as_str());
-                interface_block.push_str("SaveConfig = true\n");
+                interface_block.push_str("SaveConfig = false\n");
                 interface_block
                     .push_str(format!("PrivateKey = {}\n", profile.private_key).as_str());
                 interface_block.push_str(format!("ListenPort = {}\n", profile.port).as_str());
@@ -128,7 +128,7 @@ impl ServerProfile {
 
                 let final_string = format!("[Interface]\n{}\n\n{}", interface_block, clients_block);
                 std::fs::write(
-                    format!("{}/{}.conf", &WIREGUARD_PATH, profile.wan_interface),
+                    format!("{}/{}.conf", &WIREGUARD_PATH, profile.interface_name),
                     final_string,
                 )
                 .unwrap();
