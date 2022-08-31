@@ -20,6 +20,7 @@ pub struct ServerProfile {
     pub dns: Option<String>,
     pub clients: Option<Vec<ClientProfile>>,
     pub interface_name: String,
+    base_ip_seed: u32,
 }
 
 impl ServerProfile {
@@ -33,6 +34,7 @@ impl ServerProfile {
         wg_interface: &str,
     ) -> ServerProfile {
         let (private_key, public_key) = generate_wg_keys();
+        let last_octet: u32 = *&private_ip.split(".").last().unwrap().parse().unwrap();
         let config = ServerProfile {
             public_key,
             private_key,
@@ -43,6 +45,7 @@ impl ServerProfile {
             dns: default_dns,
             clients,
             interface_name: String::from(wg_interface),
+            base_ip_seed: last_octet,
         };
         config.persist(None);
         return config;
