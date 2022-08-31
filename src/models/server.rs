@@ -146,7 +146,7 @@ impl ServerProfile {
         let client_config = ClientProfile::new(
             client_name,
             format!("{}:{}", &self.public_ip, &self.port),
-            client_ip.join("."),
+            client_ip.join(".") + "/32",
         );
 
         let clients = &self.clients.clone();
