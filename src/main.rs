@@ -1,13 +1,13 @@
-use std::env;
-
 use models::ServerProfile;
-use wireguard_manager::{initialize, install_wireguard, models, utils::ask};
+use wireguard_manager::{
+    finalize_installation, install_wireguard, load_wireguard_config, models, utils::ask,
+};
 
 fn main() {
     println!("Welcome to Wireguard Management App");
 
     'main: loop {
-        let mut server_config = initialize(None);
+        let mut server_config = load_wireguard_config(None);
         let command = ask("select an option");
         match command.as_str() {
             "install" => {
@@ -52,6 +52,7 @@ fn main() {
                 let wan_interface = ask("What's the network interface name which the connects this machine to the internet?");
                 let port = ask("What should be the Wireguard Server port?");
                 let default_dns = ask("Do you want to set up a custom DNS for this VPN clients? If yes, enter the DNS address");
+                let wg_interface = ask("Please choose a name for Wireguard interface");
                 let port = if port.is_empty() {
                     None
                 } else {
@@ -75,6 +76,7 @@ fn main() {
                     None,
                 ));
                 server_config.as_ref().unwrap().rebuild_config();
+                finalize_installation(wg_interface);
             }
 
             "exit" => break,
