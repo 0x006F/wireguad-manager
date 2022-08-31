@@ -74,6 +74,7 @@ fn main() {
                     port,
                     dns,
                     None,
+                    &wg_interface,
                 ));
                 server_config.as_ref().unwrap().rebuild_config();
                 finalize_installation(wg_interface);

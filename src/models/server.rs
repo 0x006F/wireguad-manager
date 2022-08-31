@@ -19,6 +19,7 @@ pub struct ServerProfile {
     pub wan_interface: String,
     pub dns: Option<String>,
     pub clients: Option<Vec<ClientProfile>>,
+    pub interface_name: String,
 }
 
 impl ServerProfile {
@@ -29,6 +30,7 @@ impl ServerProfile {
         port: Option<u32>,
         default_dns: Option<String>,
         clients: Option<Vec<ClientProfile>>,
+        wg_interface: &str,
     ) -> ServerProfile {
         let (private_key, public_key) = generate_wg_keys();
         let config = ServerProfile {
@@ -40,6 +42,7 @@ impl ServerProfile {
             wan_interface,
             dns: default_dns,
             clients,
+            interface_name: String::from(wg_interface),
         };
         config.persist(None);
         return config;
@@ -115,8 +118,8 @@ impl ServerProfile {
                 interface_block
                     .push_str(format!("PrivateKey = {}\n", profile.private_key).as_str());
                 interface_block.push_str(format!("ListenPort = {}\n", profile.port).as_str());
-                interface_block.push_str(format!("PostUp = iptables -A FORWARD -i {} -j ACCEPT; iptables -t nat -A POSTROUTING -o {} -j MASQUERADE\n",profile.wan_interface, profile.private_key).as_str());
-                interface_block.push_str(format!("PostDown = iptables -D FORWARD -i {} -j ACCEPT; iptables -t nat -D POSTROUTING -o {} -j MASQUERADE\n",profile.wan_interface, profile.private_key).as_str());
+                interface_block.push_str(format!("PostUp = iptables -A FORWARD -i {} -j ACCEPT; iptables -t nat -A POSTROUTING -o {} -j MASQUERADE\n",profile.interface_name, profile.wan_interface).as_str());
+                interface_block.push_str(format!("PostDown = iptables -D FORWARD -i {} -j ACCEPT; iptables -t nat -D POSTROUTING -o {} -j MASQUERADE\n",profile.interface_name, profile.wan_interface).as_str());
                 println!("{}", &clients_block);
 
                 let final_string = format!("[Interface]\n{}\n\n{}", interface_block, clients_block);
